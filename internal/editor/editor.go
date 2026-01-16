@@ -34,8 +34,6 @@ type Editor struct {
 	currentTool Tool
 	toolColor   color.Color
 	scaleFactor float64
-	onSave      func(image.Image)
-	onCopy      func(image.Image)
 
 	// Drawing state
 	drawing      bool
@@ -64,47 +62,37 @@ func New(app fyne.App, screenshot *image.RGBA, scaleFactor float64) *Editor {
 
 // setupUI creates the editor UI
 func (e *Editor) setupUI() {
-	// Initialize overlay and preview for compositing
 	e.overlay = image.NewRGBA(e.screenshot.Bounds())
 	e.preview = image.NewRGBA(e.screenshot.Bounds())
 	e.refreshOverlay()
 
-	// Screenshot display with overlay
 	e.imgCanvas = canvas.NewImageFromImage(e.overlay)
-	e.imgCanvas.FillMode = canvas.ImageFillStretch // Stretch to fill the logical size
+	e.imgCanvas.FillMode = canvas.ImageFillStretch
 
-	// Create a tappable container for mouse events
 	drawArea := newDrawArea(e)
 
-	// Toolbar
 	toolbar := e.createToolbar()
 
-	// Calculate logical size (pixel size / scale factor)
 	bounds := e.screenshot.Bounds()
 	logicalWidth := float32(float64(bounds.Dx()) / e.scaleFactor)
 	logicalHeight := float32(float64(bounds.Dy()) / e.scaleFactor)
 
-	// Set explicit size on the image canvas
 	e.imgCanvas.SetMinSize(fyne.NewSize(logicalWidth, logicalHeight))
 
-	// Main layout - wrap the canvas in the draw area for mouse events
 	imageContainer := container.NewStack(e.imgCanvas, drawArea)
 	content := container.NewBorder(toolbar, nil, nil, nil, imageContainer)
 	e.window.SetContent(content)
 
-	// Size window to fit screenshot at logical size (with some padding for toolbar)
 	e.window.Resize(fyne.NewSize(
 		logicalWidth,
-		logicalHeight+50, // Extra space for toolbar
+		logicalHeight+50,
 	))
 }
 
 // refreshOverlay redraws the overlay with the screenshot and all annotations
 func (e *Editor) refreshOverlay() {
-	// Copy screenshot to overlay
 	draw.Draw(e.overlay, e.overlay.Bounds(), e.screenshot, image.Point{}, draw.Src)
 
-	// Draw all annotations
 	for _, ann := range e.annotations {
 		ann.Draw(e.overlay)
 	}
@@ -123,10 +111,8 @@ func (e *Editor) updatePreview() {
 		return
 	}
 
-	// Copy the current overlay (with existing annotations) to preview
 	draw.Draw(e.preview, e.preview.Bounds(), e.overlay, image.Point{}, draw.Src)
 
-	// Draw the preview annotation
 	strokeWidth := int(3 * e.scaleFactor)
 
 	switch e.currentTool {
@@ -168,7 +154,6 @@ func (d *drawArea) TappedSecondary(ev *fyne.PointEvent) {}
 
 func (d *drawArea) MouseDown(ev *desktop.MouseEvent) {
 	d.editor.drawing = true
-	// Convert logical coordinates to pixel coordinates
 	scale := d.editor.scaleFactor
 	d.editor.startPoint = image.Pt(
 		int(float64(ev.Position.X)*scale),
@@ -187,14 +172,12 @@ func (d *drawArea) Dragged(ev *fyne.DragEvent) {
 		return
 	}
 
-	// Convert logical coordinates to pixel coordinates
 	scale := d.editor.scaleFactor
 	d.editor.currentPoint = image.Pt(
 		int(float64(ev.Position.X)*scale),
 		int(float64(ev.Position.Y)*scale),
 	)
 
-	// Update preview
 	d.editor.updatePreview()
 }
 
@@ -205,11 +188,9 @@ func (d *drawArea) DragEnd() {
 	}
 	d.editor.drawing = false
 
-	// Scale stroke width for Retina displays
 	scale := d.editor.scaleFactor
 	strokeWidth := int(3 * scale)
 
-	// Create annotation based on current tool
 	var ann tools.Annotation
 	switch d.editor.currentTool {
 	case ToolArrow:
@@ -230,11 +211,11 @@ func (d *drawArea) DragEnd() {
 
 type drawAreaRenderer struct{}
 
-func (r *drawAreaRenderer) Destroy()                             {}
-func (r *drawAreaRenderer) Layout(size fyne.Size)                {}
-func (r *drawAreaRenderer) MinSize() fyne.Size                   { return fyne.NewSize(0, 0) }
-func (r *drawAreaRenderer) Objects() []fyne.CanvasObject         { return nil }
-func (r *drawAreaRenderer) Refresh()                             {}
+func (r *drawAreaRenderer) Destroy()                     {}
+func (r *drawAreaRenderer) Layout(size fyne.Size)        {}
+func (r *drawAreaRenderer) MinSize() fyne.Size           { return fyne.NewSize(0, 0) }
+func (r *drawAreaRenderer) Objects() []fyne.CanvasObject { return nil }
+func (r *drawAreaRenderer) Refresh()                     {}
 
 // createToolbar creates the annotation toolbar with icons
 func (e *Editor) createToolbar() *fyne.Container {
@@ -281,7 +262,7 @@ func (e *Editor) Show() {
 func (e *Editor) copyToClipboard() {
 	finalImg := e.renderFinal()
 	if err := output.CopyToClipboard(finalImg); err != nil {
-		dialog.ShowError(fmt.Errorf("Failed to copy to clipboard: %w", err), e.window)
+		dialog.ShowError(fmt.Errorf("failed to copy to clipboard: %w", err), e.window)
 		return
 	}
 	e.window.Close()
@@ -292,7 +273,7 @@ func (e *Editor) saveToFile() {
 	finalImg := e.renderFinal()
 	path, err := output.SaveToFile(finalImg)
 	if err != nil {
-		dialog.ShowError(fmt.Errorf("Failed to save file: %w", err), e.window)
+		dialog.ShowError(fmt.Errorf("failed to save file: %w", err), e.window)
 		return
 	}
 	dialog.ShowInformation("Saved", fmt.Sprintf("Screenshot saved to:\n%s", path), e.window)

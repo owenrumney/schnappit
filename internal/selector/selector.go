@@ -92,35 +92,29 @@ func New(app fyne.App, displayBounds image.Rectangle, scaleFactor float64, scree
 
 // setupUI creates the selection overlay UI
 func (s *Selector) setupUI() {
-	// Background image (the captured screenshot)
 	bgImage := canvas.NewImageFromImage(s.screenshot)
 	bgImage.FillMode = canvas.ImageFillStretch
 	bgImage.Resize(fyne.NewSize(s.screenWidth, s.screenHeight))
 	bgImage.Move(fyne.NewPos(0, 0))
 
-	// Semi-transparent dim overlay
 	dimColor := color.NRGBA{R: 0, G: 0, B: 0, A: 120}
 
-	// Four rectangles to create the "dim everything except selection" effect
 	s.topDim = canvas.NewRectangle(dimColor)
 	s.bottomDim = canvas.NewRectangle(dimColor)
 	s.leftDim = canvas.NewRectangle(dimColor)
 	s.rightDim = canvas.NewRectangle(dimColor)
 
-	// Initially cover the whole screen with dim
 	s.topDim.Resize(fyne.NewSize(s.screenWidth, s.screenHeight))
 	s.topDim.Move(fyne.NewPos(0, 0))
 	s.bottomDim.Resize(fyne.NewSize(0, 0))
 	s.leftDim.Resize(fyne.NewSize(0, 0))
 	s.rightDim.Resize(fyne.NewSize(0, 0))
 
-	// Selection rectangle border
 	s.selectionRect = canvas.NewRectangle(color.Transparent)
 	s.selectionRect.StrokeColor = color.NRGBA{R: 0, G: 120, B: 215, A: 255}
 	s.selectionRect.StrokeWidth = 2
 	s.selectionRect.Resize(fyne.NewSize(0, 0))
 
-	// Create resize handles
 	handleColor := color.NRGBA{R: 255, G: 255, B: 255, A: 255}
 	handleBorder := color.NRGBA{R: 0, G: 120, B: 215, A: 255}
 	for i := 0; i < 8; i++ {
@@ -132,7 +126,6 @@ func (s *Selector) setupUI() {
 		s.handles[i] = h
 	}
 
-	// Instructions text
 	s.instructions = canvas.NewText("Click and drag to select region. Press Enter to capture, Escape to cancel.", color.White)
 	s.instructions.TextSize = 14
 
@@ -141,11 +134,9 @@ func (s *Selector) setupUI() {
 	instructionsBg.Move(fyne.NewPos(15, 15))
 	s.instructions.Move(fyne.NewPos(20, 20))
 
-	// Mouse event handler
 	mouseArea := newMouseArea(s)
 	mouseArea.Resize(fyne.NewSize(s.screenWidth, s.screenHeight))
 
-	// Build content
 	content := container.NewWithoutLayout(
 		bgImage,
 		s.topDim,
@@ -188,7 +179,6 @@ func (s *Selector) confirmSelection() {
 		return
 	}
 
-	// Calculate selection in pixel coordinates
 	scale := s.scaleFactor
 	minX, minY, maxX, maxY := s.normalizedBounds()
 
@@ -215,7 +205,6 @@ func (s *Selector) updateSelection() {
 	selWidth := maxX - minX
 	selHeight := maxY - minY
 
-	// Update dim rectangles
 	s.topDim.Move(fyne.NewPos(0, 0))
 	s.topDim.Resize(fyne.NewSize(s.screenWidth, minY))
 
@@ -228,20 +217,16 @@ func (s *Selector) updateSelection() {
 	s.rightDim.Move(fyne.NewPos(maxX, minY))
 	s.rightDim.Resize(fyne.NewSize(s.screenWidth-maxX, selHeight))
 
-	// Update selection border
 	s.selectionRect.Move(fyne.NewPos(minX, minY))
 	s.selectionRect.Resize(fyne.NewSize(selWidth, selHeight))
 
-	// Update handles
 	halfHandle := float32(handleSize / 2)
 
-	// Corner handles: TL, TR, BL, BR
 	s.handles[0].Move(fyne.NewPos(minX-halfHandle, minY-halfHandle))
 	s.handles[1].Move(fyne.NewPos(maxX-halfHandle, minY-halfHandle))
 	s.handles[2].Move(fyne.NewPos(minX-halfHandle, maxY-halfHandle))
 	s.handles[3].Move(fyne.NewPos(maxX-halfHandle, maxY-halfHandle))
 
-	// Edge handles: T, B, L, R
 	midX := minX + selWidth/2
 	midY := minY + selHeight/2
 	s.handles[4].Move(fyne.NewPos(midX-halfHandle, minY-halfHandle))
@@ -249,20 +234,17 @@ func (s *Selector) updateSelection() {
 	s.handles[6].Move(fyne.NewPos(minX-halfHandle, midY-halfHandle))
 	s.handles[7].Move(fyne.NewPos(maxX-halfHandle, midY-halfHandle))
 
-	// Show handles
 	for _, h := range s.handles {
 		h.Show()
 		h.Refresh()
 	}
 
-	// Refresh all
 	s.topDim.Refresh()
 	s.bottomDim.Refresh()
 	s.leftDim.Refresh()
 	s.rightDim.Refresh()
 	s.selectionRect.Refresh()
 
-	// Update instructions
 	s.instructions.Text = "Drag handles to resize. Press Enter to capture, Escape to cancel."
 	s.instructions.Refresh()
 }
@@ -279,7 +261,6 @@ func (s *Selector) hitTestHandle(pos fyne.Position) HandlePos {
 
 	hitRadius := float32(handleSize)
 
-	// Check corners first (they have priority)
 	if abs32(pos.X-minX) < hitRadius && abs32(pos.Y-minY) < hitRadius {
 		return HandleTopLeft
 	}
@@ -293,7 +274,6 @@ func (s *Selector) hitTestHandle(pos fyne.Position) HandlePos {
 		return HandleBottomRight
 	}
 
-	// Check edges
 	if abs32(pos.X-midX) < hitRadius && abs32(pos.Y-minY) < hitRadius {
 		return HandleTop
 	}
@@ -307,7 +287,6 @@ func (s *Selector) hitTestHandle(pos fyne.Position) HandlePos {
 		return HandleRight
 	}
 
-	// Check if inside selection (for moving)
 	if pos.X >= minX && pos.X <= maxX && pos.Y >= minY && pos.Y <= maxY {
 		return HandleMove
 	}
@@ -414,18 +393,15 @@ func (m *mouseArea) DragEnd() {
 func (m *mouseArea) MouseDown(ev *desktop.MouseEvent) {
 	s := m.selector
 
-	// Check if clicking on a handle or inside selection
 	handle := s.hitTestHandle(ev.Position)
 
 	if handle != HandleNone {
-		// Start resizing/moving existing selection
 		s.dragging = true
 		s.dragHandle = handle
 		s.dragStart = ev.Position
 		s.dragSelMin = s.selectionMin
 		s.dragSelMax = s.selectionMax
 	} else {
-		// Start new selection
 		s.dragging = true
 		s.dragHandle = HandleNone
 		s.hasSelection = true
@@ -433,7 +409,6 @@ func (m *mouseArea) MouseDown(ev *desktop.MouseEvent) {
 		s.selectionMax = ev.Position
 		s.dragStart = ev.Position
 
-		// Hide handles while creating
 		for _, h := range s.handles {
 			h.Hide()
 		}

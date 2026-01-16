@@ -27,13 +27,12 @@ func Default() *Config {
 func Load() (*Config, error) {
 	path, err := configPath()
 	if err != nil {
-		return Default(), nil
+		return Default(), fmt.Errorf("failed to get config path: %w", err)
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Create default config
 			cfg := Default()
 			_ = cfg.Save() // Best effort to save default
 			return cfg, nil
@@ -46,7 +45,6 @@ func Load() (*Config, error) {
 		return Default(), nil
 	}
 
-	// Ensure hotkey has a value
 	if cfg.Hotkey == "" {
 		cfg.Hotkey = Default().Hotkey
 	}
@@ -61,7 +59,6 @@ func (c *Config) Save() error {
 		return err
 	}
 
-	// Ensure directory exists
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err

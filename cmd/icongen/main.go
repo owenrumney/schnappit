@@ -38,16 +38,13 @@ func main() {
 func generateAppIcon(size int) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 
-	// Draw rounded rectangle background with gradient
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
-			// Gradient from purple-blue to blue
 			t := float64(y) / float64(size)
-			r := uint8(88 + t*20)   // 88 -> 108
-			g := uint8(86 + t*40)   // 86 -> 126
-			b := uint8(214 - t*30)  // 214 -> 184
+			r := uint8(88 + t*20)
+			g := uint8(86 + t*40)
+			b := uint8(214 - t*30)
 
-			// Round corners
 			cornerRadius := size / 5
 			if isInRoundedRect(x, y, size, size, cornerRadius) {
 				img.Set(x, y, color.RGBA{r, g, b, 255})
@@ -55,14 +52,12 @@ func generateAppIcon(size int) image.Image {
 		}
 	}
 
-	// Draw viewfinder in white
 	drawViewfinder(img, size)
 
 	return img
 }
 
 func isInRoundedRect(x, y, w, h, r int) bool {
-	// Check corners
 	if x < r && y < r {
 		return distSq(x, y, r, r) <= r*r
 	}
@@ -87,28 +82,22 @@ func distSq(x1, y1, x2, y2 int) int {
 func drawViewfinder(img *image.RGBA, size int) {
 	c := color.RGBA{255, 255, 255, 255}
 
-	// Scale line width and margins based on icon size
 	lineWidth := max(size/11, 2)
 	margin := size / 5
 	cornerLen := size / 3
 
-	// Top-left corner
 	drawHLine(img, margin, margin, margin+cornerLen, lineWidth, c)
 	drawVLine(img, margin, margin, margin+cornerLen, lineWidth, c)
 
-	// Top-right corner
 	drawHLine(img, size-margin-cornerLen, margin, size-margin, lineWidth, c)
 	drawVLine(img, size-margin-lineWidth, margin, margin+cornerLen, lineWidth, c)
 
-	// Bottom-left corner
 	drawHLine(img, margin, size-margin-lineWidth, margin+cornerLen, lineWidth, c)
 	drawVLine(img, margin, size-margin-cornerLen, size-margin, lineWidth, c)
 
-	// Bottom-right corner
 	drawHLine(img, size-margin-cornerLen, size-margin-lineWidth, size-margin, lineWidth, c)
 	drawVLine(img, size-margin-lineWidth, size-margin-cornerLen, size-margin, lineWidth, c)
 
-	// Center dot
 	centerX, centerY := size/2, size/2
 	dotRadius := max(size/16, 2)
 	for y := centerY - dotRadius; y <= centerY+dotRadius; y++ {

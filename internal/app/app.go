@@ -36,9 +36,7 @@ func New() *App {
 func (a *App) Run() error {
 	hotkeyInfo := hotkey.GetConfiguredHotkey()
 
-	// Set up system tray if supported (keeps app running without visible window)
 	if desk, ok := a.fyneApp.(desktop.App); ok {
-		// Set custom menu bar icon
 		desk.SetSystemTrayIcon(assets.MenuBarIcon())
 
 		menu := fyne.NewMenu("Schnappit",
@@ -51,16 +49,11 @@ func (a *App) Run() error {
 		desk.SetSystemTrayMenu(menu)
 	}
 
-	// Register global hotkey after Fyne event loop starts (required on macOS)
-	// Use a goroutine with delay to ensure the event loop is fully running
 	a.fyneApp.Lifecycle().SetOnStarted(func() {
-		// Hide dock icon now that Fyne is fully initialized
 		hideDockIcon()
 
 		go func() {
-			// Small delay to ensure event loop is fully initialized
 			time.Sleep(500 * time.Millisecond)
-
 			shortcut, err := hotkey.New(a.onCapture)
 			if err != nil {
 				log.Printf("Warning: %v", err)
@@ -72,14 +65,12 @@ func (a *App) Run() error {
 		}()
 	})
 
-	// Cleanup hotkey on app stop
 	a.fyneApp.Lifecycle().SetOnStopped(func() {
 		if a.shortcut != nil {
 			a.shortcut.Unregister()
 		}
 	})
 
-	// Run the Fyne application (this blocks)
 	a.fyneApp.Run()
 
 	return nil
@@ -87,14 +78,11 @@ func (a *App) Run() error {
 
 // onCapture is called when the user triggers a screenshot capture
 func (a *App) onCapture() {
-	// Use atomic swap to prevent multiple concurrent captures
 	if !a.capturing.CompareAndSwap(false, true) {
-		return // Already capturing
+		return
 	}
 
 	log.Println("Capturing screen for region selection...")
-
-	// Capture the full screen first for the selector background
 	fullScreenshot, err := capture.CaptureDisplay(0)
 	if err != nil {
 		log.Printf("Failed to capture screenshot: %v", err)
@@ -102,20 +90,16 @@ func (a *App) onCapture() {
 		return
 	}
 
-	// Get display bounds and scale factor for region selection
 	displayBounds := capture.GetDisplayBounds(0)
 	scaleFactor := capture.GetDisplayScaleFactor(0)
 
 	log.Printf("Display bounds: %v, scale factor: %v", displayBounds, scaleFactor)
 
-	// Show region selector with the captured screenshot as background
 	sel := selector.New(a.fyneApp, displayBounds, scaleFactor, fullScreenshot,
 		func(rect image.Rectangle) {
-			// Region selected - crop from the already-captured screenshot
 			a.openEditorWithRegion(fullScreenshot, rect, scaleFactor)
 		},
 		func() {
-			// Cancelled
 			a.capturing.Store(false)
 			log.Println("Region selection cancelled")
 		},
@@ -130,7 +114,6 @@ func (a *App) openEditorWithRegion(fullScreenshot *image.RGBA, rect image.Rectan
 	log.Printf("Opening editor with region: %v", rect)
 	log.Printf("Screenshot bounds: %v", fullScreenshot.Bounds())
 
-	// Ensure rect is within screenshot bounds
 	rect = rect.Intersect(fullScreenshot.Bounds())
 	if rect.Empty() {
 		log.Printf("Selection region is empty or out of bounds")
@@ -139,14 +122,15 @@ func (a *App) openEditorWithRegion(fullScreenshot *image.RGBA, rect image.Rectan
 
 	log.Printf("Adjusted region: %v", rect)
 
-	// Create cropped image using SubImage for efficiency and safety
-	subImg := fullScreenshot.SubImage(rect).(*image.RGBA)
+	subImg, ok := fullScreenshot.SubImage(rect).(*image.RGBA)
+	if !ok {
+		log.Printf("Failed to get subimage")
+		return
+	}
 
-	// Copy to a new image with origin at (0,0)
 	cropped := image.NewRGBA(image.Rect(0, 0, rect.Dx(), rect.Dy()))
 	draw.Draw(cropped, cropped.Bounds(), subImg, rect.Min, draw.Src)
 
-	// Open editor with the cropped image and scale factor
 	ed := editor.New(a.fyneApp, cropped, scaleFactor)
 	ed.Show()
 }

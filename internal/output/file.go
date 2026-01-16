@@ -24,7 +24,6 @@ func SaveToFile(img image.Image) (string, error) {
 
 // SaveToFileWithName saves the image to a file with the specified name
 func SaveToFileWithName(img image.Image, filename string) (string, error) {
-	// Security: prevent path traversal attacks
 	if strings.Contains(filename, "..") || strings.ContainsAny(filename, `/\`) {
 		return "", fmt.Errorf("invalid filename: path traversal not allowed")
 	}
@@ -36,7 +35,6 @@ func SaveToFileWithName(img image.Image, filename string) (string, error) {
 
 	outPath := filepath.Join(dir, filename)
 
-	// Security: verify the resolved path is still within the output directory
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve output directory: %w", err)
@@ -49,15 +47,22 @@ func SaveToFileWithName(img image.Image, filename string) (string, error) {
 		return "", fmt.Errorf("invalid filename: path escapes output directory")
 	}
 
-	// Create file with restrictive permissions (owner read/write only)
 	file, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FilePermissions)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
+
 	defer file.Close()
 
 	if err := png.Encode(file, img); err != nil {
+		file.Close()
+		os.Remove(outPath)
 		return "", fmt.Errorf("failed to encode image: %w", err)
+	}
+	if err := file.Sync(); err != nil {
+		file.Close()
+		os.Remove(outPath)
+		return "", fmt.Errorf("failed to sync file: %w", err)
 	}
 
 	return outPath, nil

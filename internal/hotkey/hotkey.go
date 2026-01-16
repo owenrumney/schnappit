@@ -16,9 +16,9 @@ const EnvHotkey = "SCHNAPPIT_HOTKEY"
 
 // Shortcut represents a registered global hotkey
 type Shortcut struct {
-	hk       *hotkey.Hotkey
+	hk        *hotkey.Hotkey
 	onTrigger func()
-	stop     chan struct{}
+	stop      chan struct{}
 }
 
 // modifierMap maps string names to hotkey modifiers
@@ -54,9 +54,9 @@ var keyMap = map[string]hotkey.Key{
 	"tab":    hotkey.KeyTab,
 	"delete": hotkey.KeyDelete,
 	"f1":     hotkey.KeyF1, "f2": hotkey.KeyF2, "f3": hotkey.KeyF3,
-	"f4":     hotkey.KeyF4, "f5": hotkey.KeyF5, "f6": hotkey.KeyF6,
-	"f7":     hotkey.KeyF7, "f8": hotkey.KeyF8, "f9": hotkey.KeyF9,
-	"f10":    hotkey.KeyF10, "f11": hotkey.KeyF11, "f12": hotkey.KeyF12,
+	"f4": hotkey.KeyF4, "f5": hotkey.KeyF5, "f6": hotkey.KeyF6,
+	"f7": hotkey.KeyF7, "f8": hotkey.KeyF8, "f9": hotkey.KeyF9,
+	"f10": hotkey.KeyF10, "f11": hotkey.KeyF11, "f12": hotkey.KeyF12,
 }
 
 // ParseHotkey parses a hotkey string like "cmd+shift+x" into modifiers and key
@@ -97,12 +97,10 @@ func ParseHotkey(s string) ([]hotkey.Modifier, hotkey.Key, error) {
 
 // GetConfiguredHotkey returns the hotkey string from environment, config file, or default
 func GetConfiguredHotkey() string {
-	// Environment variable takes precedence
 	if env := os.Getenv(EnvHotkey); env != "" {
 		return env
 	}
 
-	// Load from config file
 	cfg, _ := config.Load()
 	return cfg.Hotkey
 }
@@ -129,7 +127,6 @@ func New(onTrigger func()) (*Shortcut, error) {
 
 	log.Printf("Global hotkey registered: %s", hotkeyStr)
 
-	// Start listening for hotkey events
 	go s.listen()
 
 	return s, nil

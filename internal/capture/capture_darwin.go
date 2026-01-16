@@ -256,12 +256,10 @@ func CaptureRect(displayIndex int, rect image.Rectangle) (*image.RGBA, error) {
 		return nil, fmt.Errorf("invalid capture dimensions: %dx%d", width, height)
 	}
 
-	// Security: prevent integer overflow in buffer size calculation
 	if width > MaxDimension || height > MaxDimension {
 		return nil, fmt.Errorf("capture dimensions too large: %dx%d (max %d)", width, height, MaxDimension)
 	}
 
-	// Check for potential overflow: width * height * 4
 	if width > math.MaxInt32/height/4 {
 		return nil, fmt.Errorf("capture dimensions would overflow buffer size: %dx%d", width, height)
 	}

@@ -3,6 +3,7 @@ package tools
 import (
 	"image"
 	"image/color"
+	"math"
 	"testing"
 )
 
@@ -242,7 +243,7 @@ func TestAbs(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := abs(tt.input); got != tt.want {
+		if got := int(math.Abs(float64(tt.input))); got != tt.want {
 			t.Errorf("abs(%d) = %d, want %d", tt.input, got, tt.want)
 		}
 	}

@@ -23,31 +23,24 @@ func MenuBarIcon() fyne.Resource {
 func generateMenuBarIcon(size int) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 
-	// Icon color - white for menu bar visibility
 	c := color.RGBA{255, 255, 255, 255}
 
-	// Draw corner brackets (viewfinder style)
 	cornerLen := size / 3
 	lineWidth := 2
 	margin := 2
 
-	// Top-left corner
 	drawHLine(img, margin, margin, margin+cornerLen, lineWidth, c)
 	drawVLine(img, margin, margin, margin+cornerLen, lineWidth, c)
 
-	// Top-right corner
 	drawHLine(img, size-margin-cornerLen, margin, size-margin, lineWidth, c)
 	drawVLine(img, size-margin-lineWidth, margin, margin+cornerLen, lineWidth, c)
 
-	// Bottom-left corner
 	drawHLine(img, margin, size-margin-lineWidth, margin+cornerLen, lineWidth, c)
 	drawVLine(img, margin, size-margin-cornerLen, size-margin, lineWidth, c)
 
-	// Bottom-right corner
 	drawHLine(img, size-margin-cornerLen, size-margin-lineWidth, size-margin, lineWidth, c)
 	drawVLine(img, size-margin-lineWidth, size-margin-cornerLen, size-margin, lineWidth, c)
 
-	// Center crosshair dot
 	centerX, centerY := size/2, size/2
 	dotSize := 2
 	for y := centerY - dotSize/2; y <= centerY+dotSize/2; y++ {
