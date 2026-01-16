@@ -44,8 +44,8 @@ jobs:
           mkdir -p "${APP_DIR}/Contents/MacOS"
           mkdir -p "${APP_DIR}/Contents/Resources"
 
-          # Copy binary
-          cp "${DIST_DIR}/schnappit_darwin_arm64/schnappit" "${APP_DIR}/Contents/MacOS/"
+          # Copy binary (path includes version suffix like darwin_arm64_v8.0)
+          cp ${DIST_DIR}/schnappit_darwin_arm64*/schnappit "${APP_DIR}/Contents/MacOS/"
 
           # Copy Info.plist and update version
           sed "s/1.0.0/${VERSION}/g" Info.plist > "${APP_DIR}/Contents/Info.plist"
