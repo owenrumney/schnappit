@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -8,6 +9,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
@@ -22,7 +24,6 @@ type Tool int
 const (
 	ToolArrow Tool = iota
 	ToolRectangle
-	ToolText
 )
 
 // Editor represents the screenshot annotation editor
@@ -166,9 +167,6 @@ func (d *drawArea) Tapped(ev *fyne.PointEvent) {}
 func (d *drawArea) TappedSecondary(ev *fyne.PointEvent) {}
 
 func (d *drawArea) MouseDown(ev *desktop.MouseEvent) {
-	if d.editor.currentTool == ToolText {
-		return // Text tool handled differently
-	}
 	d.editor.drawing = true
 	// Convert logical coordinates to pixel coordinates
 	scale := d.editor.scaleFactor
@@ -250,11 +248,6 @@ func (e *Editor) createToolbar() *fyne.Container {
 	})
 	rectBtn.Importance = widget.MediumImportance
 
-	textBtn := widget.NewButtonWithIcon("", theme.DocumentIcon(), func() {
-		e.currentTool = ToolText
-	})
-	textBtn.Importance = widget.MediumImportance
-
 	copyBtn := widget.NewButtonWithIcon("", theme.ContentCopyIcon(), func() {
 		e.copyToClipboard()
 	})
@@ -272,7 +265,6 @@ func (e *Editor) createToolbar() *fyne.Container {
 	return container.NewHBox(
 		arrowBtn,
 		rectBtn,
-		textBtn,
 		widget.NewSeparator(),
 		copyBtn,
 		saveBtn,
@@ -289,7 +281,7 @@ func (e *Editor) Show() {
 func (e *Editor) copyToClipboard() {
 	finalImg := e.renderFinal()
 	if err := output.CopyToClipboard(finalImg); err != nil {
-		// TODO: Show error dialog
+		dialog.ShowError(fmt.Errorf("Failed to copy to clipboard: %w", err), e.window)
 		return
 	}
 	e.window.Close()
@@ -298,11 +290,12 @@ func (e *Editor) copyToClipboard() {
 // saveToFile saves the annotated screenshot to a file
 func (e *Editor) saveToFile() {
 	finalImg := e.renderFinal()
-	if _, err := output.SaveToFile(finalImg); err != nil {
-		// TODO: Show error dialog
+	path, err := output.SaveToFile(finalImg)
+	if err != nil {
+		dialog.ShowError(fmt.Errorf("Failed to save file: %w", err), e.window)
 		return
 	}
-	e.window.Close()
+	dialog.ShowInformation("Saved", fmt.Sprintf("Screenshot saved to:\n%s", path), e.window)
 }
 
 // renderFinal renders the screenshot with all annotations

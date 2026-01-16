@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 )
 
 // Annotation represents a drawable annotation on the screenshot
@@ -60,8 +61,7 @@ func (a *ArrowAnnotation) Bounds() image.Rectangle {
 
 // Contains returns true if the point is near the arrow line
 func (a *ArrowAnnotation) Contains(x, y int) bool {
-	// Simplified hit detection
-	return a.Bounds().At(x, y) != color.Transparent
+	return image.Pt(x, y).In(a.Bounds())
 }
 
 // RectAnnotation represents a rectangle annotation
@@ -140,18 +140,20 @@ func drawLine(img *image.RGBA, start, end image.Point, c color.Color, width int)
 	}
 }
 
-func drawArrowHead(img *image.RGBA, start, end image.Point, c color.Color, width int) {
-	// Calculate arrow head points
-	// This is a simplified version - could be improved
-	headLength := 15
-	headWidth := 8
+func drawArrowHead(img *image.RGBA, start, end image.Point, c color.Color, strokeWidth int) {
+	// Arrow head dimensions scale with stroke width for consistent appearance
+	headLength := strokeWidth * 5 // Length of arrow head
+	headWidth := strokeWidth * 3  // Width of arrow head
 
 	dx := float64(end.X - start.X)
 	dy := float64(end.Y - start.Y)
-	length := max(1, int(sqrt(dx*dx+dy*dy)))
+	length := math.Sqrt(dx*dx + dy*dy)
+	if length < 1 {
+		return // Arrow too short to draw head
+	}
 
 	// Normalize direction
-	dx, dy = dx/float64(length), dy/float64(length)
+	dx, dy = dx/length, dy/length
 
 	// Arrow head base point
 	baseX := float64(end.X) - dx*float64(headLength)
@@ -165,8 +167,8 @@ func drawArrowHead(img *image.RGBA, start, end image.Point, c color.Color, width
 	right := image.Pt(int(baseX-perpX*float64(headWidth)), int(baseY-perpY*float64(headWidth)))
 
 	// Draw arrow head lines
-	drawLine(img, end, left, c, width)
-	drawLine(img, end, right, c, width)
+	drawLine(img, end, left, c, strokeWidth)
+	drawLine(img, end, right, c, strokeWidth)
 }
 
 func drawRectOutline(img *image.RGBA, rect image.Rectangle, c color.Color, width int) {
@@ -185,15 +187,4 @@ func abs(x int) int {
 		return -x
 	}
 	return x
-}
-
-func sqrt(x float64) float64 {
-	if x <= 0 {
-		return 0
-	}
-	z := x
-	for i := 0; i < 10; i++ {
-		z = z - (z*z-x)/(2*z)
-	}
-	return z
 }

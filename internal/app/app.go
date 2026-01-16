@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/draw"
 	"log"
+	"sync/atomic"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -11,14 +12,13 @@ import (
 
 	"github.com/owenrumney/schnappit/internal/capture"
 	"github.com/owenrumney/schnappit/internal/editor"
-	"github.com/owenrumney/schnappit/internal/output"
 	"github.com/owenrumney/schnappit/internal/selector"
 )
 
 // App represents the main Schnappit application
 type App struct {
 	fyneApp   fyne.App
-	capturing bool
+	capturing atomic.Bool
 }
 
 // New creates a new Schnappit application
@@ -51,10 +51,10 @@ func (a *App) Run() error {
 
 // onCapture is called when the user triggers a screenshot capture
 func (a *App) onCapture() {
-	if a.capturing {
-		return // Prevent multiple captures
+	// Use atomic swap to prevent multiple concurrent captures
+	if !a.capturing.CompareAndSwap(false, true) {
+		return // Already capturing
 	}
-	a.capturing = true
 
 	log.Println("Capturing screen for region selection...")
 
@@ -62,7 +62,7 @@ func (a *App) onCapture() {
 	fullScreenshot, err := capture.CaptureDisplay(0)
 	if err != nil {
 		log.Printf("Failed to capture screenshot: %v", err)
-		a.capturing = false
+		a.capturing.Store(false)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (a *App) onCapture() {
 		},
 		func() {
 			// Cancelled
-			a.capturing = false
+			a.capturing.Store(false)
 			log.Println("Region selection cancelled")
 		},
 	)
@@ -89,7 +89,7 @@ func (a *App) onCapture() {
 
 // openEditorWithRegion crops the screenshot to the selected region and opens the editor
 func (a *App) openEditorWithRegion(fullScreenshot *image.RGBA, rect image.Rectangle, scaleFactor float64) {
-	defer func() { a.capturing = false }()
+	defer func() { a.capturing.Store(false) }()
 
 	log.Printf("Opening editor with region: %v", rect)
 	log.Printf("Screenshot bounds: %v", fullScreenshot.Bounds())
@@ -113,14 +113,4 @@ func (a *App) openEditorWithRegion(fullScreenshot *image.RGBA, rect image.Rectan
 	// Open editor with the cropped image and scale factor
 	ed := editor.New(a.fyneApp, cropped, scaleFactor)
 	ed.Show()
-}
-
-// QuickCapture captures the screen and copies directly to clipboard (no editor)
-func (a *App) QuickCapture() error {
-	screenshot, err := capture.CaptureDisplay(0)
-	if err != nil {
-		return err
-	}
-
-	return output.CopyToClipboard(screenshot)
 }
