@@ -56,7 +56,7 @@ make run
 
 ### Requirements
 
-- macOS 12.3 or later
+- macOS 14.0 (Sonoma) or later
 - Go 1.21 or later (for building from source)
 
 ## Usage
