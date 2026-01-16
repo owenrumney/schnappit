@@ -35,32 +35,9 @@ bundle: build
 	@mkdir -p $(BUILD_DIR)/Schnappit.app/Contents/MacOS
 	@mkdir -p $(BUILD_DIR)/Schnappit.app/Contents/Resources
 	@cp $(BUILD_DIR)/$(APP_NAME) $(BUILD_DIR)/Schnappit.app/Contents/MacOS/
-	@cp Info.plist $(BUILD_DIR)/Schnappit.app/Contents/ 2>/dev/null || \
-		echo '<?xml version="1.0" encoding="UTF-8"?>\n\
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n\
-<plist version="1.0">\n\
-<dict>\n\
-	<key>CFBundleExecutable</key>\n\
-	<string>schnappit</string>\n\
-	<key>CFBundleIdentifier</key>\n\
-	<string>com.owenrumney.schnappit</string>\n\
-	<key>CFBundleName</key>\n\
-	<string>Schnappit</string>\n\
-	<key>CFBundleVersion</key>\n\
-	<string>1.0.0</string>\n\
-	<key>CFBundleShortVersionString</key>\n\
-	<string>1.0.0</string>\n\
-	<key>LSMinimumSystemVersion</key>\n\
-	<string>12.3</string>\n\
-	<key>NSHighResolutionCapable</key>\n\
-	<true/>\n\
-	<key>NSScreenCaptureUsageDescription</key>\n\
-	<string>Schnappit needs screen recording permission to capture screenshots.</string>\n\
-	<key>NSAppleEventsUsageDescription</key>\n\
-	<string>Schnappit needs accessibility permission for global hotkeys.</string>\n\
-</dict>\n\
-</plist>' > $(BUILD_DIR)/Schnappit.app/Contents/Info.plist
+	@cp Info.plist $(BUILD_DIR)/Schnappit.app/Contents/
 	@echo "Bundle created at $(BUILD_DIR)/Schnappit.app"
+	@echo "Install with: cp -r $(BUILD_DIR)/Schnappit.app /Applications/"
 
 # Development: build and run with verbose logging
 dev:

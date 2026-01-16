@@ -5,13 +5,16 @@ import (
 	"image/draw"
 	"log"
 	"sync/atomic"
+	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/driver/desktop"
 
+	"github.com/owenrumney/schnappit/internal/assets"
 	"github.com/owenrumney/schnappit/internal/capture"
 	"github.com/owenrumney/schnappit/internal/editor"
+	"github.com/owenrumney/schnappit/internal/hotkey"
 	"github.com/owenrumney/schnappit/internal/selector"
 )
 
@@ -19,6 +22,7 @@ import (
 type App struct {
 	fyneApp   fyne.App
 	capturing atomic.Bool
+	shortcut  *hotkey.Shortcut
 }
 
 // New creates a new Schnappit application
@@ -30,18 +34,50 @@ func New() *App {
 
 // Run starts the application
 func (a *App) Run() error {
+	hotkeyInfo := hotkey.GetConfiguredHotkey()
+
 	// Set up system tray if supported (keeps app running without visible window)
 	if desk, ok := a.fyneApp.(desktop.App); ok {
+		// Set custom menu bar icon
+		desk.SetSystemTrayIcon(assets.MenuBarIcon())
+
 		menu := fyne.NewMenu("Schnappit",
-			fyne.NewMenuItem("Capture Screenshot", a.onCapture),
+			fyne.NewMenuItem("Capture Screenshot ("+hotkeyInfo+")", a.onCapture),
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Quit", func() {
 				a.fyneApp.Quit()
 			}),
 		)
 		desk.SetSystemTrayMenu(menu)
-		log.Println("Schnappit running. Use the system tray menu to capture.")
 	}
+
+	// Register global hotkey after Fyne event loop starts (required on macOS)
+	// Use a goroutine with delay to ensure the event loop is fully running
+	a.fyneApp.Lifecycle().SetOnStarted(func() {
+		// Hide dock icon now that Fyne is fully initialized
+		hideDockIcon()
+
+		go func() {
+			// Small delay to ensure event loop is fully initialized
+			time.Sleep(500 * time.Millisecond)
+
+			shortcut, err := hotkey.New(a.onCapture)
+			if err != nil {
+				log.Printf("Warning: %v", err)
+				log.Println("Continuing without global hotkey - use system tray menu instead")
+			} else {
+				a.shortcut = shortcut
+				log.Printf("Schnappit running. Press %s or use system tray to capture.", hotkeyInfo)
+			}
+		}()
+	})
+
+	// Cleanup hotkey on app stop
+	a.fyneApp.Lifecycle().SetOnStopped(func() {
+		if a.shortcut != nil {
+			a.shortcut.Unregister()
+		}
+	})
 
 	// Run the Fyne application (this blocks)
 	a.fyneApp.Run()
