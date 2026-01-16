@@ -190,10 +190,7 @@ func (s *Selector) confirmSelection() {
 
 	// Calculate selection in pixel coordinates
 	scale := s.scaleFactor
-	minX := min(s.selectionMin.X, s.selectionMax.X)
-	minY := min(s.selectionMin.Y, s.selectionMax.Y)
-	maxX := max(s.selectionMin.X, s.selectionMax.X)
-	maxY := max(s.selectionMin.Y, s.selectionMax.Y)
+	minX, minY, maxX, maxY := s.normalizedBounds()
 
 	rect := image.Rect(
 		int(float64(minX)*scale),
@@ -214,11 +211,7 @@ func (s *Selector) updateSelection() {
 		return
 	}
 
-	minX := min(s.selectionMin.X, s.selectionMax.X)
-	minY := min(s.selectionMin.Y, s.selectionMax.Y)
-	maxX := max(s.selectionMin.X, s.selectionMax.X)
-	maxY := max(s.selectionMin.Y, s.selectionMax.Y)
-
+	minX, minY, maxX, maxY := s.normalizedBounds()
 	selWidth := maxX - minX
 	selHeight := maxY - minY
 
@@ -280,10 +273,7 @@ func (s *Selector) hitTestHandle(pos fyne.Position) HandlePos {
 		return HandleNone
 	}
 
-	minX := min(s.selectionMin.X, s.selectionMax.X)
-	minY := min(s.selectionMin.Y, s.selectionMax.Y)
-	maxX := max(s.selectionMin.X, s.selectionMax.X)
-	maxY := max(s.selectionMin.Y, s.selectionMax.Y)
+	minX, minY, maxX, maxY := s.normalizedBounds()
 	midX := (minX + maxX) / 2
 	midY := (minY + maxY) / 2
 
@@ -323,6 +313,15 @@ func (s *Selector) hitTestHandle(pos fyne.Position) HandlePos {
 	}
 
 	return HandleNone
+}
+
+// normalizedBounds returns the selection bounds with min/max properly ordered
+func (s *Selector) normalizedBounds() (minX, minY, maxX, maxY float32) {
+	minX = min(s.selectionMin.X, s.selectionMax.X)
+	minY = min(s.selectionMin.Y, s.selectionMax.Y)
+	maxX = max(s.selectionMin.X, s.selectionMax.X)
+	maxY = max(s.selectionMin.Y, s.selectionMax.Y)
+	return
 }
 
 // Show displays the selector overlay

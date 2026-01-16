@@ -6,12 +6,15 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
 const (
 	// DefaultDir is the default directory for saving screenshots
 	DefaultDir = "Pictures/schnappit"
+	// FilePermissions restricts screenshot files to owner read/write only
+	FilePermissions = 0600
 )
 
 // SaveToFile saves the image to a file in the schnappit directory
@@ -21,14 +24,33 @@ func SaveToFile(img image.Image) (string, error) {
 
 // SaveToFileWithName saves the image to a file with the specified name
 func SaveToFileWithName(img image.Image, filename string) (string, error) {
+	// Security: prevent path traversal attacks
+	if strings.Contains(filename, "..") || strings.ContainsAny(filename, `/\`) {
+		return "", fmt.Errorf("invalid filename: path traversal not allowed")
+	}
+
 	dir, err := getOutputDir()
 	if err != nil {
 		return "", err
 	}
 
-	filepath := filepath.Join(dir, filename)
+	outPath := filepath.Join(dir, filename)
 
-	file, err := os.Create(filepath)
+	// Security: verify the resolved path is still within the output directory
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve output directory: %w", err)
+	}
+	absPath, err := filepath.Abs(outPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve output path: %w", err)
+	}
+	if !strings.HasPrefix(absPath, absDir+string(filepath.Separator)) {
+		return "", fmt.Errorf("invalid filename: path escapes output directory")
+	}
+
+	// Create file with restrictive permissions (owner read/write only)
+	file, err := os.OpenFile(outPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FilePermissions)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
@@ -38,7 +60,7 @@ func SaveToFileWithName(img image.Image, filename string) (string, error) {
 		return "", fmt.Errorf("failed to encode image: %w", err)
 	}
 
-	return filepath, nil
+	return outPath, nil
 }
 
 // getOutputDir returns the output directory, creating it if necessary

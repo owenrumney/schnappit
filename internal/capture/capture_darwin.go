@@ -14,6 +14,19 @@ static int displayCount = 0;
 static CGDirectDisplayID *displays = NULL;
 static CGRect *displayBounds = NULL;
 
+// Cleanup frees allocated memory for displays
+void SCK_Cleanup() {
+    if (displays) {
+        free(displays);
+        displays = NULL;
+    }
+    if (displayBounds) {
+        free(displayBounds);
+        displayBounds = NULL;
+    }
+    displayCount = 0;
+}
+
 // Initialize and get display information using ScreenCaptureKit
 void SCK_Initialize() {
     @autoreleasepool {
@@ -96,14 +109,24 @@ float SCK_GetDisplayScaleFactor(int index) {
 }
 
 // Capture a region of the screen
-void SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void *buffer) {
+// Returns 0 on success, -1 on error, -2 on size mismatch
+int SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void *buffer, int bufferSize) {
+    __block int result = 0;
+
     @autoreleasepool {
         if (displayCount == 0) {
             SCK_Initialize();
         }
 
         if (displayIndex < 0 || displayIndex >= displayCount) {
-            return;
+            return -1;
+        }
+
+        // Validate buffer size to prevent overflow
+        int expectedSize = width * height * 4;
+        if (bufferSize < expectedSize) {
+            NSLog(@"Buffer too small: got %d, expected %d", bufferSize, expectedSize);
+            return -1;
         }
 
         dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
@@ -111,6 +134,7 @@ void SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void
         [SCShareableContent getShareableContentWithCompletionHandler:^(SCShareableContent *content, NSError *error) {
             if (error) {
                 NSLog(@"Error: %@", error);
+                result = -1;
                 dispatch_semaphore_signal(semaphore);
                 return;
             }
@@ -124,6 +148,7 @@ void SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void
             }
 
             if (!targetDisplay) {
+                result = -1;
                 dispatch_semaphore_signal(semaphore);
                 return;
             }
@@ -141,12 +166,21 @@ void SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void
                                       completionHandler:^(CGImageRef image, NSError *error) {
                 if (error || !image) {
                     NSLog(@"Capture error: %@", error);
+                    result = -1;
                     dispatch_semaphore_signal(semaphore);
                     return;
                 }
 
                 size_t imgWidth = CGImageGetWidth(image);
                 size_t imgHeight = CGImageGetHeight(image);
+
+                // Security: validate captured image dimensions match expected
+                if ((int)imgWidth != width || (int)imgHeight != height) {
+                    NSLog(@"Size mismatch: expected %dx%d, got %zux%zu", width, height, imgWidth, imgHeight);
+                    result = -2;
+                    dispatch_semaphore_signal(semaphore);
+                    return;
+                }
 
                 CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
                 CGContextRef context = CGBitmapContextCreate(
@@ -170,6 +204,7 @@ void SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void
 
         dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
     }
+    return result;
 }
 */
 import "C"
@@ -177,8 +212,17 @@ import "C"
 import (
 	"fmt"
 	"image"
+	"math"
 	"unsafe"
 )
+
+// MaxDimension is the maximum width or height for capture to prevent overflow
+const MaxDimension = 16384
+
+// Cleanup frees memory allocated by the capture module
+func Cleanup() {
+	C.SCK_Cleanup()
+}
 
 // NumDisplays returns the number of active displays
 func NumDisplays() int {
@@ -212,16 +256,35 @@ func CaptureRect(displayIndex int, rect image.Rectangle) (*image.RGBA, error) {
 		return nil, fmt.Errorf("invalid capture dimensions: %dx%d", width, height)
 	}
 
+	// Security: prevent integer overflow in buffer size calculation
+	if width > MaxDimension || height > MaxDimension {
+		return nil, fmt.Errorf("capture dimensions too large: %dx%d (max %d)", width, height, MaxDimension)
+	}
+
+	// Check for potential overflow: width * height * 4
+	if width > math.MaxInt32/height/4 {
+		return nil, fmt.Errorf("capture dimensions would overflow buffer size: %dx%d", width, height)
+	}
+
+	bufferSize := width * height * 4
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	C.SCK_CaptureRect(
+	result := C.SCK_CaptureRect(
 		C.int(displayIndex),
 		C.int(rect.Min.X),
 		C.int(rect.Min.Y),
 		C.int(width),
 		C.int(height),
 		unsafe.Pointer(&img.Pix[0]),
+		C.int(bufferSize),
 	)
+
+	if result != 0 {
+		if result == -2 {
+			return nil, fmt.Errorf("captured image size mismatch")
+		}
+		return nil, fmt.Errorf("capture failed with error code %d", result)
+	}
 
 	return img, nil
 }
