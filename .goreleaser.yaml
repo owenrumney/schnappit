@@ -53,44 +53,6 @@ archives:
       - README.md
       - LICENSE*
 
-# Custom packaging for macOS .app bundle and .dmg
-# This runs after the build
-hooks:
-  post:
-    - cmd: |
-        sh -c '
-        VERSION="{{ .Version }}"
-        DIST_DIR="dist"
-
-        # Create .app bundle
-        APP_DIR="${DIST_DIR}/Schnappit.app"
-        mkdir -p "${APP_DIR}/Contents/MacOS"
-        mkdir -p "${APP_DIR}/Contents/Resources"
-
-        # Copy universal binary
-        cp "${DIST_DIR}/schnappit_darwin_all/schnappit" "${APP_DIR}/Contents/MacOS/"
-
-        # Copy Info.plist and update version
-        sed "s/1.0.0/${VERSION}/g" Info.plist > "${APP_DIR}/Contents/Info.plist"
-
-        # Create DMG
-        DMG_NAME="${DIST_DIR}/Schnappit_${VERSION}_macOS.dmg"
-
-        # Create temporary DMG directory
-        DMG_TMP="${DIST_DIR}/dmg_tmp"
-        mkdir -p "${DMG_TMP}"
-        cp -r "${APP_DIR}" "${DMG_TMP}/"
-        ln -s /Applications "${DMG_TMP}/Applications"
-
-        # Create DMG using hdiutil
-        hdiutil create -volname "Schnappit" -srcfolder "${DMG_TMP}" -ov -format UDZO "${DMG_NAME}"
-
-        # Cleanup
-        rm -rf "${DMG_TMP}"
-
-        echo "Created ${DMG_NAME}"
-        '
-
 checksum:
   name_template: 'checksums.txt'
 
@@ -111,5 +73,3 @@ release:
   draft: false
   prerelease: auto
   name_template: "v{{ .Version }}"
-  extra_files:
-    - glob: dist/*.dmg
