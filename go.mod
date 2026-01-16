@@ -5,6 +5,7 @@ go 1.25.5
 require (
 	fyne.io/fyne/v2 v2.7.2
 	golang.design/x/clipboard v0.7.1
+	golang.design/x/hotkey v0.4.1
 )
 
 require (

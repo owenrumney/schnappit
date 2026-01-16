@@ -1,0 +1,115 @@
+version: 2
+
+project_name: schnappit
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: schnappit
+    main: ./cmd/schnappit
+    binary: schnappit
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=1
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    # macOS-specific build settings
+    overrides:
+      - goos: darwin
+        goarch: arm64
+        env:
+          - CGO_ENABLED=1
+          - CC=clang
+          - CXX=clang++
+      - goos: darwin
+        goarch: amd64
+        env:
+          - CGO_ENABLED=1
+          - CC=o64-clang
+          - CXX=o64-clang++
+
+# Create universal binary for macOS
+universal_binaries:
+  - id: schnappit-universal
+    ids:
+      - schnappit
+    replace: true
+    name_template: schnappit
+
+archives:
+  - id: default
+    formats:
+      - zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+
+# Custom packaging for macOS .app bundle and .dmg
+# This runs after the build
+hooks:
+  post:
+    - cmd: |
+        sh -c '
+        VERSION="{{ .Version }}"
+        DIST_DIR="dist"
+
+        # Create .app bundle
+        APP_DIR="${DIST_DIR}/Schnappit.app"
+        mkdir -p "${APP_DIR}/Contents/MacOS"
+        mkdir -p "${APP_DIR}/Contents/Resources"
+
+        # Copy universal binary
+        cp "${DIST_DIR}/schnappit_darwin_all/schnappit" "${APP_DIR}/Contents/MacOS/"
+
+        # Copy Info.plist and update version
+        sed "s/1.0.0/${VERSION}/g" Info.plist > "${APP_DIR}/Contents/Info.plist"
+
+        # Create DMG
+        DMG_NAME="${DIST_DIR}/Schnappit_${VERSION}_macOS.dmg"
+
+        # Create temporary DMG directory
+        DMG_TMP="${DIST_DIR}/dmg_tmp"
+        mkdir -p "${DMG_TMP}"
+        cp -r "${APP_DIR}" "${DMG_TMP}/"
+        ln -s /Applications "${DMG_TMP}/Applications"
+
+        # Create DMG using hdiutil
+        hdiutil create -volname "Schnappit" -srcfolder "${DMG_TMP}" -ov -format UDZO "${DMG_NAME}"
+
+        # Cleanup
+        rm -rf "${DMG_TMP}"
+
+        echo "Created ${DMG_NAME}"
+        '
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: owenrumney
+    name: schnappit
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
+  extra_files:
+    - glob: dist/*.dmg
