@@ -20,6 +20,16 @@ Download the latest `.dmg` from the [Releases](https://github.com/owenrumney/sch
 2. Drag Schnappit to Applications
 3. Launch from Applications
 
+**Note:** On first launch, macOS may show a security warning because the app isn't notarized. To open it:
+- Right-click (or Control-click) on Schnappit in Applications
+- Select "Open" from the context menu
+- Click "Open" in the dialog
+
+Alternatively, run this in Terminal:
+```bash
+xattr -cr /Applications/Schnappit.app
+```
+
 ### From Source
 
 ```bash

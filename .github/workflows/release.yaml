@@ -50,6 +50,9 @@ jobs:
           # Copy Info.plist and update version
           sed "s/1.0.0/${VERSION}/g" Info.plist > "${APP_DIR}/Contents/Info.plist"
 
+          # Ad-hoc code sign the app bundle
+          codesign --force --deep --sign - "${APP_DIR}"
+
           # Create DMG
           DMG_NAME="${DIST_DIR}/Schnappit_${VERSION}_macOS.dmg"
 
