@@ -13,36 +13,15 @@ builds:
     goos:
       - darwin
     goarch:
-      - amd64
       - arm64
     env:
       - CGO_ENABLED=1
+      - CC=clang
+      - CXX=clang++
     flags:
       - -trimpath
     ldflags:
       - -s -w
-    # macOS-specific build settings
-    overrides:
-      - goos: darwin
-        goarch: arm64
-        env:
-          - CGO_ENABLED=1
-          - CC=clang
-          - CXX=clang++
-      - goos: darwin
-        goarch: amd64
-        env:
-          - CGO_ENABLED=1
-          - CC=o64-clang
-          - CXX=o64-clang++
-
-# Create universal binary for macOS
-universal_binaries:
-  - id: schnappit-universal
-    ids:
-      - schnappit
-    replace: true
-    name_template: schnappit
 
 archives:
   - id: default
