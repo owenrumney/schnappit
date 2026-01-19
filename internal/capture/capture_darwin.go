@@ -108,6 +108,29 @@ float SCK_GetDisplayScaleFactor(int index) {
     return 1.0;
 }
 
+// Get the display index that contains the mouse cursor
+int SCK_GetDisplayAtMousePosition() {
+    if (displayCount == 0) {
+        SCK_Initialize();
+    }
+
+    // Get the mouse cursor position in global screen coordinates
+    CGEventRef event = CGEventCreate(NULL);
+    CGPoint mouseLocation = CGEventGetLocation(event);
+    CFRelease(event);
+
+    // Find which display contains the mouse position
+    for (int i = 0; i < displayCount; i++) {
+        CGRect bounds = CGDisplayBounds(displays[i]);
+        if (CGRectContainsPoint(bounds, mouseLocation)) {
+            return i;
+        }
+    }
+
+    // Default to primary display if mouse position not found on any display
+    return 0;
+}
+
 // Capture a region of the screen
 // Returns 0 on success, -1 on error, -2 on size mismatch
 int SCK_CaptureRect(int displayIndex, int x, int y, int width, int height, void *buffer, int bufferSize) {
@@ -227,6 +250,11 @@ func Cleanup() {
 // NumDisplays returns the number of active displays
 func NumDisplays() int {
 	return int(C.SCK_GetDisplayCount())
+}
+
+// GetDisplayAtMousePosition returns the index of the display containing the mouse cursor
+func GetDisplayAtMousePosition() int {
+	return int(C.SCK_GetDisplayAtMousePosition())
 }
 
 // GetDisplayScaleFactor returns the scale factor for Retina/HiDPI displays

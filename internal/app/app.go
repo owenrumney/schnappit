@@ -39,8 +39,39 @@ func (a *App) Run() error {
 	if desk, ok := a.fyneApp.(desktop.App); ok {
 		desk.SetSystemTrayIcon(assets.MenuBarIcon())
 
+		// Create login item toggle
+		loginItemLabel := "Start on Login"
+		if IsLoginItemEnabled() {
+			loginItemLabel = "✓ Start on Login"
+		}
+		loginItem := fyne.NewMenuItem(loginItemLabel, nil)
+		loginItem.Action = func() {
+			enabled := IsLoginItemEnabled()
+			if err := SetLoginItemEnabled(!enabled); err != nil {
+				log.Printf("Failed to toggle login item: %v", err)
+				return
+			}
+			// Update menu label
+			if !enabled {
+				loginItem.Label = "✓ Start on Login"
+			} else {
+				loginItem.Label = "Start on Login"
+			}
+			desk.SetSystemTrayMenu(fyne.NewMenu("Schnappit",
+				fyne.NewMenuItem("Capture Screenshot ("+hotkeyInfo+")", a.onCapture),
+				fyne.NewMenuItemSeparator(),
+				loginItem,
+				fyne.NewMenuItemSeparator(),
+				fyne.NewMenuItem("Quit", func() {
+					a.fyneApp.Quit()
+				}),
+			))
+		}
+
 		menu := fyne.NewMenu("Schnappit",
 			fyne.NewMenuItem("Capture Screenshot ("+hotkeyInfo+")", a.onCapture),
+			fyne.NewMenuItemSeparator(),
+			loginItem,
 			fyne.NewMenuItemSeparator(),
 			fyne.NewMenuItem("Quit", func() {
 				a.fyneApp.Quit()
@@ -82,16 +113,19 @@ func (a *App) onCapture() {
 		return
 	}
 
-	log.Println("Capturing screen for region selection...")
-	fullScreenshot, err := capture.CaptureDisplay(0)
+	// Detect which display contains the mouse cursor
+	displayIndex := capture.GetDisplayAtMousePosition()
+
+	log.Printf("Capturing display %d (where mouse cursor is located)...", displayIndex)
+	fullScreenshot, err := capture.CaptureDisplay(displayIndex)
 	if err != nil {
 		log.Printf("Failed to capture screenshot: %v", err)
 		a.capturing.Store(false)
 		return
 	}
 
-	displayBounds := capture.GetDisplayBounds(0)
-	scaleFactor := capture.GetDisplayScaleFactor(0)
+	displayBounds := capture.GetDisplayBounds(displayIndex)
+	scaleFactor := capture.GetDisplayScaleFactor(displayIndex)
 
 	log.Printf("Display bounds: %v, scale factor: %v", displayBounds, scaleFactor)
 
