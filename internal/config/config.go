@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -13,7 +14,8 @@ const (
 
 // Config represents the application configuration
 type Config struct {
-	Hotkey string `json:"hotkey"`
+	Hotkey       string `json:"hotkey"`
+	StartOnLogin bool   `json:"start_on_login"`
 }
 
 // Default returns the default configuration

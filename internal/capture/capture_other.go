@@ -13,6 +13,16 @@ func NumDisplays() int {
 	return 0
 }
 
+// GetDisplayAtMousePosition returns the index of the display containing the mouse cursor
+func GetDisplayAtMousePosition() int {
+	return 0
+}
+
+// GetDisplayScaleFactor returns the scale factor for Retina/HiDPI displays
+func GetDisplayScaleFactor(displayIndex int) float64 {
+	return 1.0
+}
+
 // GetDisplayBounds returns the bounds of the display at the given index
 func GetDisplayBounds(displayIndex int) image.Rectangle {
 	return image.Rectangle{}
