@@ -2,6 +2,8 @@
 
 APP_NAME := schnappit
 BUILD_DIR := build
+APPLICATIONS_DIR := /Applications
+BUNDLE_NAME := Schnappit.app
 CMD_DIR := cmd/schnappit
 ICONGEN_DIR := cmd/icongen
 
@@ -53,15 +55,20 @@ icon:
 # Create macOS application bundle
 bundle: build icon
 	@echo "Creating application bundle..."
-	@mkdir -p $(BUILD_DIR)/Schnappit.app/Contents/MacOS
-	@mkdir -p $(BUILD_DIR)/Schnappit.app/Contents/Resources
-	@cp $(BUILD_DIR)/$(APP_NAME) $(BUILD_DIR)/Schnappit.app/Contents/MacOS/
-	@cp $(BUILD_DIR)/AppIcon.icns $(BUILD_DIR)/Schnappit.app/Contents/Resources/
-	@cp Info.plist $(BUILD_DIR)/Schnappit.app/Contents/
-	@codesign --force --deep --sign - $(BUILD_DIR)/Schnappit.app || true
-	@echo "Bundle created at $(BUILD_DIR)/Schnappit.app"
-	@echo "Install with: cp -r $(BUILD_DIR)/Schnappit.app /Applications/"
+	@mkdir -p $(BUILD_DIR)/${BUNDLE_NAME}/Contents/MacOS
+	@mkdir -p $(BUILD_DIR)/${BUNDLE_NAME}/Contents/Resources
+	@cp $(BUILD_DIR)/$(APP_NAME) $(BUILD_DIR)/${BUNDLE_NAME}/Contents/MacOS/
+	@cp $(BUILD_DIR)/AppIcon.icns $(BUILD_DIR)/${BUNDLE_NAME}/Contents/Resources/
+	@cp Info.plist $(BUILD_DIR)/${BUNDLE_NAME}/Contents/
+	@codesign --force --deep --sign - $(BUILD_DIR)/${BUNDLE_NAME} || true
+	@echo "Bundle created at $(BUILD_DIR)/${BUNDLE_NAME}"
+	@echo "Install with: cp -r $(BUILD_DIR)/${BUNDLE_NAME} ${APPLICATIONS_DIR}/"
 
+bundle-local: bundle
+	@echo "Copy to local ${APPLICATIONS_DIR}"
+	@cp -r ${BUILD_DIR}/${BUNDLE_NAME} ${APPLICATIONS_DIR}/
+	@/usr/bin/xattr -cr ${APPLICATIONS_DIR}/${BUNDLE_NAME}
+	@echo "Schnappit is ready to use locally"
 # Development: build and run with verbose logging
 dev:
 	go run ./$(CMD_DIR)

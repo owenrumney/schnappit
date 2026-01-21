@@ -116,6 +116,10 @@ int SCK_GetDisplayAtMousePosition() {
 
     // Get the mouse cursor position in global screen coordinates
     CGEventRef event = CGEventCreate(NULL);
+    if (event == NULL) {
+        // Fallback to primary display if we cannot obtain the mouse location
+        return 0;
+    }
     CGPoint mouseLocation = CGEventGetLocation(event);
     CFRelease(event);
 
@@ -272,7 +276,10 @@ func GetDisplayBounds(displayIndex int) image.Rectangle {
 // CaptureDisplay captures the entire display at the given index
 func CaptureDisplay(displayIndex int) (*image.RGBA, error) {
 	bounds := GetDisplayBounds(displayIndex)
-	return CaptureRect(displayIndex, bounds)
+	// Use display-local coordinates (0,0) since ScreenCaptureKit's sourceRect
+	// is relative to the display being captured, not global screen coordinates
+	localRect := image.Rect(0, 0, bounds.Dx(), bounds.Dy())
+	return CaptureRect(displayIndex, localRect)
 }
 
 // CaptureRect captures a rectangular region from the specified display
