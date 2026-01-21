@@ -13,7 +13,7 @@ func main() {
 	application := app.New()
 
 	if err := application.Run(); err != nil {
-		log.Printf("Error: %v", err)
+		log.Fatal(err)
 		os.Exit(1)
 	}
 }

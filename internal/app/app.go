@@ -39,33 +39,9 @@ func (a *App) Run() error {
 	if desk, ok := a.fyneApp.(desktop.App); ok {
 		desk.SetSystemTrayIcon(assets.MenuBarIcon())
 
-		// Create login item toggle
-		loginItemLabel := "Start on Login"
+		loginItem := fyne.NewMenuItem("Start on Login", nil)
 		if IsLoginItemEnabled() {
-			loginItemLabel = "✓ Start on Login"
-		}
-		loginItem := fyne.NewMenuItem(loginItemLabel, nil)
-		loginItem.Action = func() {
-			enabled := IsLoginItemEnabled()
-			if err := SetLoginItemEnabled(!enabled); err != nil {
-				log.Printf("Failed to toggle login item: %v", err)
-				return
-			}
-			// Update menu label
-			if !enabled {
-				loginItem.Label = "✓ Start on Login"
-			} else {
-				loginItem.Label = "Start on Login"
-			}
-			desk.SetSystemTrayMenu(fyne.NewMenu("Schnappit",
-				fyne.NewMenuItem("Capture Screenshot ("+hotkeyInfo+")", a.onCapture),
-				fyne.NewMenuItemSeparator(),
-				loginItem,
-				fyne.NewMenuItemSeparator(),
-				fyne.NewMenuItem("Quit", func() {
-					a.fyneApp.Quit()
-				}),
-			))
+			loginItem.Label = "✓ Start on Login"
 		}
 
 		menu := fyne.NewMenu("Schnappit",
@@ -77,6 +53,21 @@ func (a *App) Run() error {
 				a.fyneApp.Quit()
 			}),
 		)
+
+		loginItem.Action = func() {
+			enabled := IsLoginItemEnabled()
+			if err := SetLoginItemEnabled(!enabled); err != nil {
+				log.Printf("Failed to toggle login item: %v", err)
+				return
+			}
+			if !enabled {
+				loginItem.Label = "✓ Start on Login"
+			} else {
+				loginItem.Label = "Start on Login"
+			}
+			menu.Refresh()
+		}
+
 		desk.SetSystemTrayMenu(menu)
 	}
 

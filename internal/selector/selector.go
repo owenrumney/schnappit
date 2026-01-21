@@ -31,22 +31,22 @@ const handleSize = 8
 
 // Selector represents the region selection overlay
 type Selector struct {
-	window        fyne.Window
-	onSelect      func(image.Rectangle)
-	onCancel      func()
-	scaleFactor   float64
+	window      fyne.Window
+	onSelect    func(image.Rectangle)
+	onCancel    func()
+	scaleFactor float64
 
 	// Selection state
-	hasSelection  bool
-	selectionMin  fyne.Position
-	selectionMax  fyne.Position
+	hasSelection bool
+	selectionMin fyne.Position
+	selectionMax fyne.Position
 
 	// Drag state
-	dragging      bool
-	dragHandle    HandlePos
-	dragStart     fyne.Position
-	dragSelMin    fyne.Position
-	dragSelMax    fyne.Position
+	dragging   bool
+	dragHandle HandlePos
+	dragStart  fyne.Position
+	dragSelMin fyne.Position
+	dragSelMax fyne.Position
 
 	// Background screenshot
 	screenshot *image.RGBA
@@ -59,13 +59,17 @@ type Selector struct {
 	selectionRect *canvas.Rectangle
 
 	// Resize handles
-	handles       []*canvas.Rectangle
+	handles []*canvas.Rectangle
 
 	// Instructions
-	instructions  *canvas.Text
+	instructions *canvas.Text
 
 	screenWidth  float32
 	screenHeight float32
+
+	// Display position (for multi-monitor support)
+	displayX float32
+	displayY float32
 }
 
 // New creates a new region selector with a pre-captured screenshot as background
@@ -73,6 +77,9 @@ func New(app fyne.App, displayBounds image.Rectangle, scaleFactor float64, scree
 	// Use logical coordinates for display
 	screenWidth := float32(displayBounds.Dx()) / float32(scaleFactor)
 	screenHeight := float32(displayBounds.Dy()) / float32(scaleFactor)
+	// Display origin in logical coordinates
+	displayX := float32(displayBounds.Min.X) / float32(scaleFactor)
+	displayY := float32(displayBounds.Min.Y) / float32(scaleFactor)
 
 	s := &Selector{
 		onSelect:     onSelect,
@@ -81,6 +88,8 @@ func New(app fyne.App, displayBounds image.Rectangle, scaleFactor float64, scree
 		screenshot:   screenshot,
 		screenWidth:  screenWidth,
 		screenHeight: screenHeight,
+		displayX:     displayX,
+		displayY:     displayY,
 		handles:      make([]*canvas.Rectangle, 8),
 	}
 
@@ -156,7 +165,11 @@ func (s *Selector) setupUI() {
 	content.Add(mouseArea)
 
 	s.window.SetContent(content)
-	s.window.SetFullScreen(true)
+
+	// Position the window on the correct display instead of using SetFullScreen
+	// SetFullScreen would put it on the primary display, not the target display
+	s.window.Resize(fyne.NewSize(s.screenWidth, s.screenHeight))
+	s.window.SetPadded(false)
 
 	s.window.Canvas().SetOnTypedKey(func(key *fyne.KeyEvent) {
 		switch key.Name {
@@ -306,6 +319,8 @@ func (s *Selector) normalizedBounds() (minX, minY, maxX, maxY float32) {
 // Show displays the selector overlay
 func (s *Selector) Show() {
 	s.window.Show()
+	// Position the window on the correct display (handles multi-monitor setups like PbP)
+	positionWindowOnDisplay(s.displayX, s.displayY, s.screenWidth, s.screenHeight)
 }
 
 // Close closes the selector window

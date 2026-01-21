@@ -116,6 +116,10 @@ int SCK_GetDisplayAtMousePosition() {
 
     // Get the mouse cursor position in global screen coordinates
     CGEventRef event = CGEventCreate(NULL);
+    if (event == NULL) {
+        // Fallback to primary display if we cannot obtain the mouse location
+        return 0;
+    }
     CGPoint mouseLocation = CGEventGetLocation(event);
     CFRelease(event);
 
