@@ -104,23 +104,4 @@ jobs:
           files: dist/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Homebrew Tap
-        env:
-          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-
-          # Clone the tap repo
-          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/owenrumney/homebrew-tools.git tap
-          cd tap
-
-          # Update version in cask
-          sed -i '' "s/version \".*\"/version \"${VERSION}\"/" Casks/schnappit.rb
-
-          # Commit and push
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/schnappit.rb
-          git commit -m "Update schnappit to ${VERSION}"
-          git push
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
