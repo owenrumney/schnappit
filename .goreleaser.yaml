@@ -26,8 +26,7 @@ builds:
 
 archives:
   - id: default
-    formats:
-      - zip
+    formats: ['zip']
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
@@ -64,3 +63,4 @@ homebrew_casks:
       owner: owenrumney
       name: homebrew-tools
       branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
