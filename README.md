@@ -15,7 +15,7 @@ A lightweight screenshot capture and annotation tool for macOS, written in Go.
 ### Homebrew (Recommended)
 
 ```bash
-brew tap owenrumney/schnappit
+brew tap owenrumney/tools
 brew install --cask schnappit
 ```
 

@@ -53,3 +53,14 @@ release:
   draft: false
   prerelease: auto
   name_template: "v{{ .Version }}"
+
+homebrew_casks:
+  - name: schnappit
+    homepage: https://github.com/owenrumney/schnappit
+    description: A macOS screenshot utility
+    binaries:
+      - schnappit
+    repository:
+      owner: owenrumney
+      name: homebrew-tools
+      branch: main

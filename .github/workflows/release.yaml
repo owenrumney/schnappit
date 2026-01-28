@@ -112,7 +112,7 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/v}"
 
           # Clone the tap repo
-          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/owenrumney/homebrew-schnappit.git tap
+          git clone https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/owenrumney/homebrew-tools.git tap
           cd tap
 
           # Update version in cask
