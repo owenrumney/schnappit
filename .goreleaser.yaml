@@ -26,8 +26,7 @@ builds:
 
 archives:
   - id: default
-    formats:
-      - zip
+    formats: ['zip']
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
@@ -60,7 +59,15 @@ homebrew_casks:
     description: A macOS screenshot utility
     binaries:
       - schnappit
+    hooks:
+      post:
+        install: |
+          # Remove quarantine attribute to avoid Gatekeeper issues
+          system_command "/usr/bin/xattr",
+                         args: ["-cr", "#{staged_path}/schnappit"],
+                         sudo: false
     repository:
       owner: owenrumney
       name: homebrew-tools
       branch: main
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
