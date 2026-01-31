@@ -62,11 +62,9 @@ func TestLoadWithEmptyHotkey(t *testing.T) {
 	os.Setenv("HOME", tmpDir)
 	defer os.Setenv("HOME", origHome)
 
-
 	configPath := filepath.Join(tmpDir, configDir, configFile)
 	os.MkdirAll(filepath.Dir(configPath), 0755)
 	os.WriteFile(configPath, []byte(`{"hotkey": ""}`), 0644)
-
 
 	cfg, err := Load()
 	if err != nil {
