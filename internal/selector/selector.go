@@ -144,6 +144,7 @@ func (s *Selector) setupUI() {
 	s.instructions.Move(fyne.NewPos(20, 20))
 
 	mouseArea := newMouseArea(s)
+	mouseArea.Move(fyne.NewPos(0, 0))
 	mouseArea.Resize(fyne.NewSize(s.screenWidth, s.screenHeight))
 
 	content := container.NewWithoutLayout(
