@@ -57,6 +57,7 @@ bundle: build icon
 	@echo "Creating application bundle..."
 	@mkdir -p $(BUILD_DIR)/${BUNDLE_NAME}/Contents/MacOS
 	@mkdir -p $(BUILD_DIR)/${BUNDLE_NAME}/Contents/Resources
+	@xattr -cr $(BUILD_DIR)/${APP_NAMEx}
 	@cp $(BUILD_DIR)/$(APP_NAME) $(BUILD_DIR)/${BUNDLE_NAME}/Contents/MacOS/
 	@cp $(BUILD_DIR)/AppIcon.icns $(BUILD_DIR)/${BUNDLE_NAME}/Contents/Resources/
 	@cp Info.plist $(BUILD_DIR)/${BUNDLE_NAME}/Contents/
