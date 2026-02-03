@@ -67,21 +67,4 @@ release:
   prerelease: auto
   name_template: "v{{ .Version }}"
 
-homebrew_casks:
-  - name: schnappit
-    homepage: https://github.com/owenrumney/schnappit
-    description: A macOS screenshot utility
-    custom_block: |
-      app "Schnappit.app"
 
-      postflight do
-        # Remove quarantine attribute to avoid Gatekeeper issues
-        system_command "/usr/bin/xattr",
-                       args: ["-cr", "#{appdir}/Schnappit.app"],
-                       sudo: false
-      end
-    repository:
-      owner: owenrumney
-      name: homebrew-tools
-      branch: main
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
