@@ -3,6 +3,7 @@ package selector
 import (
 	"image"
 	"image/color"
+	"sync/atomic"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -70,6 +71,9 @@ type Selector struct {
 	// Display position (for multi-monitor support)
 	displayX float32
 	displayY float32
+
+	// Ready state - prevents interaction until window is properly positioned
+	ready atomic.Bool
 }
 
 // New creates a new region selector with a pre-captured screenshot as background
@@ -321,7 +325,10 @@ func (s *Selector) normalizedBounds() (minX, minY, maxX, maxY float32) {
 func (s *Selector) Show() {
 	s.window.Show()
 	// Position the window on the correct display (handles multi-monitor setups like PbP)
+	// This blocks for ~100ms to ensure the window is created before positioning
 	positionWindowOnDisplay(s.displayX, s.displayY, s.screenWidth, s.screenHeight)
+	// Mark as ready for interaction now that the window is properly positioned
+	s.ready.Store(true)
 }
 
 // Close closes the selector window
@@ -408,6 +415,12 @@ func (m *mouseArea) DragEnd() {
 
 func (m *mouseArea) MouseDown(ev *desktop.MouseEvent) {
 	s := m.selector
+
+	// Ignore mouse events until the window is properly positioned
+	// This prevents offset issues when the user moves the mouse during window setup
+	if !s.ready.Load() {
+		return
+	}
 
 	handle := s.hitTestHandle(ev.Position)
 

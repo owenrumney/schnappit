@@ -5,6 +5,7 @@ project_name: schnappit
 before:
   hooks:
     - go mod tidy
+    - make icon
 
 builds:
   - id: schnappit
@@ -23,12 +24,25 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
+    hooks:
+      post:
+        - cmd: |
+            mkdir -p Schnappit.app/Contents/MacOS && \
+            mkdir -p Schnappit.app/Contents/Resources && \
+            cp {{ .Path }} Schnappit.app/Contents/MacOS/schnappit && \
+            cp build/AppIcon.icns Schnappit.app/Contents/Resources/ && \
+            cp Info.plist Schnappit.app/Contents/ && \
+            codesign --force --deep --sign - Schnappit.app || true
+          output: true
 
 archives:
   - id: default
     formats: ['zip']
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
+      - src: Schnappit.app/**/*
+        dst: Schnappit.app
+        strip_parent: true
       - README.md
       - LICENSE*
 
@@ -57,15 +71,15 @@ homebrew_casks:
   - name: schnappit
     homepage: https://github.com/owenrumney/schnappit
     description: A macOS screenshot utility
-    binaries:
-      - schnappit
-    hooks:
-      post:
-        install: |
-          # Remove quarantine attribute to avoid Gatekeeper issues
-          system_command "/usr/bin/xattr",
-                         args: ["-cr", "#{staged_path}/schnappit"],
-                         sudo: false
+    custom_block: |
+      app "Schnappit.app"
+
+      postflight do
+        # Remove quarantine attribute to avoid Gatekeeper issues
+        system_command "/usr/bin/xattr",
+                       args: ["-cr", "#{appdir}/Schnappit.app"],
+                       sudo: false
+      end
     repository:
       owner: owenrumney
       name: homebrew-tools
