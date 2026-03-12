@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	nativedialog "github.com/sqweek/dialog"
 
 	"github.com/owenrumney/schnappit/internal/editor/tools"
 	"github.com/owenrumney/schnappit/internal/output"
@@ -268,15 +269,32 @@ func (e *Editor) copyToClipboard() {
 	e.window.Close()
 }
 
-// saveToFile saves the annotated screenshot to a file
+// saveToFile saves the annotated screenshot to a file using the native save dialog
 func (e *Editor) saveToFile() {
 	finalImg := e.renderFinal()
-	path, err := output.SaveToFile(finalImg)
+
+	defaultDir, _ := output.GetOutputDir()
+	defaultFile := output.GenerateFilename()
+
+	path, err := nativedialog.File().
+		Filter("PNG Image", "png").
+		SetStartDir(defaultDir).
+		SetStartFile(defaultFile).
+		Title("Save Screenshot").
+		Save()
 	if err != nil {
+		if err == nativedialog.ErrCancelled {
+			return
+		}
 		dialog.ShowError(fmt.Errorf("failed to save file: %w", err), e.window)
 		return
 	}
-	dialog.ShowInformation("Saved", fmt.Sprintf("Screenshot saved to:\n%s", path), e.window)
+
+	if err := output.SaveToPath(finalImg, path); err != nil {
+		dialog.ShowError(fmt.Errorf("failed to save file: %w", err), e.window)
+		return
+	}
+	e.window.Close()
 }
 
 // renderFinal renders the screenshot with all annotations

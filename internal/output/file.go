@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +20,33 @@ const (
 
 // SaveToFile saves the image to a file in the schnappit directory
 func SaveToFile(img image.Image) (string, error) {
-	return SaveToFileWithName(img, generateFilename())
+	return SaveToFileWithName(img, GenerateFilename())
+}
+
+// SaveToWriter encodes the image as PNG and writes it to the given writer
+func SaveToWriter(img image.Image, w io.Writer) error {
+	return png.Encode(w, img)
+}
+
+// SaveToPath saves the image as PNG to the specified file path
+func SaveToPath(img image.Image, path string) error {
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, FilePermissions)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	if err := png.Encode(file, img); err != nil {
+		file.Close()
+		os.Remove(path)
+		return fmt.Errorf("failed to encode image: %w", err)
+	}
+	if err := file.Sync(); err != nil {
+		file.Close()
+		os.Remove(path)
+		return fmt.Errorf("failed to sync file: %w", err)
+	}
+	return nil
 }
 
 // SaveToFileWithName saves the image to a file with the specified name
@@ -28,7 +55,7 @@ func SaveToFileWithName(img image.Image, filename string) (string, error) {
 		return "", fmt.Errorf("invalid filename: path traversal not allowed")
 	}
 
-	dir, err := getOutputDir()
+	dir, err := GetOutputDir()
 	if err != nil {
 		return "", err
 	}
@@ -68,8 +95,8 @@ func SaveToFileWithName(img image.Image, filename string) (string, error) {
 	return outPath, nil
 }
 
-// getOutputDir returns the output directory, creating it if necessary
-func getOutputDir() (string, error) {
+// GetOutputDir returns the output directory, creating it if necessary
+func GetOutputDir() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to get home directory: %w", err)
@@ -84,7 +111,7 @@ func getOutputDir() (string, error) {
 	return dir, nil
 }
 
-// generateFilename generates a timestamp-based filename
-func generateFilename() string {
+// GenerateFilename generates a timestamp-based filename
+func GenerateFilename() string {
 	return fmt.Sprintf("schnappit-%s.png", time.Now().Format("2006-01-02-150405"))
 }

@@ -4,6 +4,7 @@ go 1.25.5
 
 require (
 	fyne.io/fyne/v2 v2.7.2
+	github.com/sqweek/dialog v0.0.0-20260123140253-64c163d53aac
 	golang.design/x/clipboard v0.7.1
 	golang.design/x/hotkey v0.4.1
 )
@@ -11,6 +12,7 @@ require (
 require (
 	fyne.io/systray v1.12.0 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/TheTitanrain/w32 v0.0.0-20180517000239-4f5cfb03fabf // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect

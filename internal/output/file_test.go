@@ -10,7 +10,7 @@ import (
 )
 
 func TestGenerateFilename(t *testing.T) {
-	filename := generateFilename()
+	filename := GenerateFilename()
 
 	// Should start with "schnappit-"
 	if !strings.HasPrefix(filename, "schnappit-") {
@@ -30,9 +30,9 @@ func TestGenerateFilename(t *testing.T) {
 }
 
 func TestGetOutputDir(t *testing.T) {
-	dir, err := getOutputDir()
+	dir, err := GetOutputDir()
 	if err != nil {
-		t.Fatalf("getOutputDir() error = %v", err)
+		t.Fatalf("GetOutputDir() error = %v", err)
 	}
 
 	// Should be within home directory
@@ -48,7 +48,7 @@ func TestGetOutputDir(t *testing.T) {
 
 	// Directory should exist
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		t.Errorf("Output directory should exist after getOutputDir()")
+		t.Errorf("Output directory should exist after GetOutputDir()")
 	}
 }
 
